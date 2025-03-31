@@ -1,0 +1,83 @@
+name: Provision and Deploy via CodeWorks Infra
+
+inputs:
+  host:
+    required: true
+    description: EC2 host IP or domain
+  ssh_key:
+    required: true
+    description: Private SSH key to connect to EC2
+  ghcr_pat:
+    required: true
+    description: GitHub token with read:packages for GHCR
+  env_secrets:
+    required: false
+    description: JSON string of ENV files to write, e.g. {"ENV_APPNAME": ".env.appname"}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+
+    - name: Add ENV files to context
+      if: inputs.env_secrets != ''
+      shell: bash
+      run: |
+        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "printf \"%s\\n\" \"\(.value | gsub("\\\""; ""))\" > \(.value)"' | bash
+
+    - name: Install js-yaml
+      shell: bash
+      run: npm install js-yaml
+
+    - name: Generate services.json from docker-compose
+      shell: bash
+      run: node extract-services.mjs
+
+    - name: Setup SSH
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ssh_key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        echo "StrictHostKeyChecking=no" >> ~/.ssh/config
+
+    - name: Docker Auth
+      shell: bash
+      run: echo "${{ inputs.ghcr_pat }}" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
+
+    - name: Upload files to remote
+      shell: bash
+      run: |
+        ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
+        FILES="./docker-compose.yml services.json ./ansible"
+        for file in .env.*; do
+          [ -e "$file" ] && FILES="$FILES $file"
+        done
+        scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
+
+    - name: Install and run Ansible
+      shell: bash
+      run: |
+        ssh ubuntu@${{ inputs.host }} <<'EOF'
+          set -e
+          export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+          cd /opt/deploy
+
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://get.docker.com -o get-docker.sh
+            sudo sh get-docker.sh
+            rm get-docker.sh
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "❗ docker compose v2 not available"
+            exit 1
+          fi
+
+          sudo systemctl enable docker
+          sudo systemctl start docker
+
+          docker login ghcr.io -u ghcr-pull-bot -p ${{ inputs.ghcr_pat }}
+          ansible-playbook ansible/playbook.yml -i localhost,
+        EOF
