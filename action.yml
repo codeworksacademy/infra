@@ -35,7 +35,7 @@ runs:
     - name: Install js-yaml
       shell: bash
       working-directory: ${{ github.action_path }}
-      run: npm install
+      run: npm install js-yaml
 
     - name: Generate services.json from docker-compose
       shell: bash
