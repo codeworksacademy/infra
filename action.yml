@@ -62,11 +62,14 @@ runs:
       shell: bash
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
-        FILES="${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json ${{ inputs.app_dir }}/ansible"
+    
+        FILES="${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json ./ansible"
         for file in ${{ inputs.app_dir }}/.env.*; do
           [ -e "$file" ] && FILES="$FILES $file"
         done
+    
         scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
+
 
     - name: Install and run Ansible
       shell: bash
