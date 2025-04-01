@@ -26,11 +26,11 @@ runs:
       uses: actions/checkout@v4
 
     - name: Add ENV files to context
-      if: inputs.env_secrets != ''
-      shell: bash
-      run: |
-        cd ${{ inputs.app_dir }}
-        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > \(.value)"' | bash
+    if: inputs.env_secrets != ''
+    shell: bash
+    run: |
+      echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > \(.value)"' | bash
+
 
     - name: Install js-yaml
       shell: bash
