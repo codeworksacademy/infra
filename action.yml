@@ -86,6 +86,12 @@ runs:
             exit 1
           fi
 
+          if ! command -v ansible-playbook >/dev/null 2>&1; then
+            echo "📦 Installing Ansible..."
+            sudo apt update
+            sudo apt install -y ansible
+          fi
+
           sudo systemctl enable docker
           sudo systemctl start docker
 
