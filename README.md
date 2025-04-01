@@ -1,5 +1,10 @@
 # CodeWorks Infra GitHub Action 🐳
 
+[![CI](https://github.com/codeworksacademy/infra/actions/workflows/main.yml/badge.svg)](https://github.com/codeworksacademy/infra/actions/workflows/main.yml)
+[![GitHub](https://img.shields.io/github/license/codeworksacademy/infra)](https://github.com/codeworksacademy/infra/blob/main/LICENSE)
+[![GitHub tag](https://img.shields.io/github/v/tag/codeworksacademy/infra)](https://github.com/codeworksacademy/infra/tags)
+
+
 This repository contains a standardized structure for deploying student applications to a shared HOST instance. It uses [Docker Compose](https://docs.docker.com/compose/), [Caddy](https://caddyserver.com/), [Ansible](https://docs.ansible.com/), and [GitHub Actions](https://docs.github.com/en/actions) to automate the deployment process.
 
 ## Features
@@ -13,6 +18,16 @@ This repository contains a standardized structure for deploying student applicat
 
 ## Usage
 
+### 📂 Repo Structure (Student)
+
+```
+project/
+├── docker-compose.yml
+└── .github/
+    └── workflows/
+        └── deploy.yml
+```
+
 ### Required Secrets
 Add the following repository secrets:
 
@@ -22,6 +37,7 @@ Add the following repository secrets:
 | `HOST`         | IP address or domain of the EC2 host             |
 | `GHCR_PAT`     | GitHub token with `read:packages` scope          |
 | `ENV_<name>`   | One or more secrets representing your ENV files  |
+
 
 ### Example Workflow
 ```yaml
@@ -112,3 +128,34 @@ In the `docker-compose.yml`, you can define optional labels for each service to 
 - Use private GitHub repos and images.
 - Use `.gitignore` to avoid committing `.env.*` or sensitive data.
 - Ensure your HOST has a stable domain (Elastic IP or DNS).
+
+
+## 🛠️ Troubleshooting
+
+**Problem:** `.env` files are not deployed
+- ✅ Ensure they are created in the root of the student repo (not inside subdirectories)
+- ✅ Double-check the `printf` step correctly writes the file
+- ✅ GitHub Secrets should not include surrounding quotes or braces
+
+**Problem:** `docker-compose` fails with `file not found`
+- ✅ Make sure `docker-compose.yml` is in the root
+- ✅ Ensure the Compose file references the correct `.env` filenames
+
+**Problem:** SSH or permissions denied
+- ✅ Make sure the `SSH_KEY` has access to the remote Host
+- ✅ Confirm the remote `/opt/deploy` directory exists and is writable by the `ubuntu` user
+
+
+## 👥 Maintainers
+
+- [@jakeoverall](https://github.com/jakeoverall)
+- CodeWorks Team — [codeworksacademy.com](https://codeworksacademy.com)
+
+---
+
+PRs and issues welcome!
+
+
+
+
+
