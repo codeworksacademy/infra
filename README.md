@@ -1,7 +1,5 @@
 # CodeWorks Infra GitHub Action 🐳
 
-[![CI](https://github.com/codeworksacademy/infra/actions/workflows/main.yml/badge.svg)](https://github.com/codeworksacademy/infra/actions/workflows/main.yml)
-[![GitHub](https://img.shields.io/github/license/codeworksacademy/infra)](https://github.com/codeworksacademy/infra/blob/main/LICENSE)
 [![GitHub tag](https://img.shields.io/github/v/tag/codeworksacademy/infra)](https://github.com/codeworksacademy/infra/tags)
 
 
