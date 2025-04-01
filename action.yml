@@ -1,5 +1,5 @@
 name: Provision and Deploy via CodeWorks Infra
-description: Deploy a student's repo using Docker Compose and Ansible
+
 inputs:
   host:
     required: true
@@ -12,20 +12,29 @@ inputs:
     description: GitHub token with read:packages for GHCR
   env_secrets:
     required: false
-    description: JSON string of ENV files to write
-    default: "{}"
+    description: JSON string of ENV files to write, e.g. '{"ENV_APPNAME": ".env.appname"}'
+    default: '{ "ENV_APPNAME": ".env.appname" }'
+  app_dir:
+    required: false
+    description: Path to the student app repo
+    default: app
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Checkout Repo
+    - name: Checkout Infra Action
       uses: actions/checkout@v4
 
+    - name: Checkout App Repo
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.app_dir }}
+
     - name: Add ENV files to context
-      if: inputs.env_secrets != '{}'
+      if: inputs.env_secrets != ''
       shell: bash
       run: |
-        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > \(.value)"' | bash
+        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > ${{ inputs.app_dir }}/\(.value)"' | bash
 
     - name: Install js-yaml
       shell: bash
@@ -33,7 +42,8 @@ runs:
 
     - name: Generate services.json from docker-compose
       shell: bash
-      run: node extract-services.mjs
+      working-directory: ${{ inputs.app_dir }}
+      run: node ../extract-services.mjs
 
     - name: Setup SSH
       shell: bash
@@ -51,8 +61,8 @@ runs:
       shell: bash
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
-        FILES="./app/docker-compose.yml services.json ./ansible"
-        for file in .env.*; do
+        FILES="${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json ${{ inputs.app_dir }}/ansible"
+        for file in ${{ inputs.app_dir }}/.env.*; do
           [ -e "$file" ] && FILES="$FILES $file"
         done
         scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
