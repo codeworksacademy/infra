@@ -34,13 +34,14 @@ runs:
 
     - name: Install js-yaml
       shell: bash
-      run: |
-        npm install js-yaml
+      working-directory: ${{ github.action_path }}
+      run: npm install
 
     - name: Generate services.json from docker-compose
       shell: bash
       run: |
-        node ${{ github.action_path }}/extract-services.mjs ${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json
+        node ${{ github.action_path }}/extract-services.mjs app/docker-compose.yml app/services.json
+
 
     - name: Setup SSH
       shell: bash
