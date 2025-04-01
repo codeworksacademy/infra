@@ -1,7 +1,7 @@
 import fs from 'fs';
 import yaml from 'js-yaml';
 
-const compose = yaml.load(fs.readFileSync('./docker-compose.yml', 'utf8'));
+const compose = yaml.load(fs.readFileSync('./app/docker-compose.yml', 'utf8'));
 const services = {};
 
 // @ts-ignore
