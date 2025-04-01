@@ -12,7 +12,7 @@ inputs:
     description: GitHub token with read:packages for GHCR
   env_secrets:
     required: false
-    description: JSON string of ENV files to write, e.g. '{"ENV_APPNAME": ".env.appname"}'
+    description: JSON string of ENV files to write
     default: '{"ENV_APPNAME": ".env.appname"}'
   app_dir:
     required: false
