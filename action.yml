@@ -10,10 +10,6 @@ inputs:
   ghcr_pat:
     required: true
     description: GitHub token with read:packages for GHCR
-  app_dir:
-    required: false
-    default: app
-    description: Subdirectory where student app files live
 
 runs:
   using: composite
