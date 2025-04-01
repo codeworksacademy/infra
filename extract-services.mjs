@@ -1,15 +1,16 @@
-import fs from 'fs';
-import yaml from 'js-yaml';
+import fs from 'fs'
+import yaml from 'js-yaml'
 
-const compose = yaml.load(fs.readFileSync('./app/docker-compose.yml', 'utf8'));
-const services = {};
+const [,, composePath, outputPath] = process.argv
 
-// @ts-ignore
+const compose = yaml.load(fs.readFileSync(composePath, 'utf8'))
+const services = {}
+
 for (const [name, config] of Object.entries(compose.services || {})) {
   services[name] = {
     labels: config.labels || {},
     ports: config.ports || []
-  };
+  }
 }
 
-fs.writeFileSync('./services.json', JSON.stringify(services, null, 2));
+fs.writeFileSync(outputPath, JSON.stringify(services, null, 2))
