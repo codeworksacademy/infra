@@ -53,6 +53,7 @@ runs:
           FILES="$FILES $file"
         done
         FILES="$FILES ${{ github.action_path }}/ansible"
+        echo "🗂️ Final FILES list: $FILES"
         scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
 
 
