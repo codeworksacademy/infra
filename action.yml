@@ -42,8 +42,9 @@ runs:
 
     - name: Generate services.json from docker-compose
       shell: bash
-      working-directory: ${{ inputs.app_dir }}
-      run: node ../extract-services.mjs
+      run: |
+        cp ${{ github.action_path }}/extract-services.mjs ${{ inputs.app_dir }}/
+        node ${{ inputs.app_dir }}/extract-services.mjs
 
     - name: Setup SSH
       shell: bash
