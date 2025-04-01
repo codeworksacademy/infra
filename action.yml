@@ -48,7 +48,7 @@ runs:
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
 
-        FILES="$GITHUB_WORKSPACE/app/docker-compose.yml $GITHUB_WORKSPACE/app/services.json ${{ github.action_path }}/ansible"
+        FILES="docker-compose.yml services.json"
 
         echo "🔍 Searching for .env.* files in $GITHUB_WORKSPACE"
         while IFS= read -r file; do
