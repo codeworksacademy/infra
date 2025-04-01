@@ -40,7 +40,7 @@ runs:
     - name: Generate services.json from docker-compose
       shell: bash
       run: |
-        node ${{ github.action_path }}/extract-services.mjs app/docker-compose.yml app/services.json
+        node ${{ github.action_path }}/extract-services.mjs $GITHUB_WORKSPACE/docker-compose.yml $GITHUB_WORKSPACE/services.json
 
 
     - name: Setup SSH
