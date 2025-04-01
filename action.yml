@@ -51,7 +51,7 @@ runs:
       shell: bash
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
-        FILES="./docker-compose.yml services.json ./ansible"
+        FILES="./app/docker-compose.yml services.json ./ansible"
         for file in .env.*; do
           [ -e "$file" ] && FILES="$FILES $file"
         done
