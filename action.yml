@@ -1,5 +1,5 @@
 name: Provision and Deploy via CodeWorks Infra
-
+description: Deploy a student's repo using docker-compose and an Ansible playbook
 inputs:
   host:
     required: true
@@ -13,10 +13,10 @@ inputs:
   env_secrets:
     required: false
     description: JSON string of ENV files to write, e.g. '{"ENV_APPNAME": ".env.appname"}'
-    default: '{"ENV_APPNAME": ".env.appname"}'
+    default: '{}'
 
 runs:
-  using: composite
+  using: "composite"
   steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
@@ -25,7 +25,13 @@ runs:
       if: inputs.env_secrets != ''
       shell: bash
       run: |
-        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "printf \"%s\\n\" \"\(.value | gsub("\\\""; ""))\" > \(.value)"' | bash
+        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "printf \"%s\\n\" \"${!K}\" > \(.value)"' > setenv.sh
+        chmod +x setenv.sh
+        KVS=$(echo '${{ inputs.env_secrets }}' | jq -r 'keys[]')
+        for K in $KVS; do
+          export "K=$K"
+        done
+        ./setenv.sh
 
     - name: Install js-yaml
       shell: bash
