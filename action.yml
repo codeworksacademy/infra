@@ -16,35 +16,31 @@ inputs:
     default: '{"ENV_APPNAME": ".env.appname"}'
   app_dir:
     required: false
-    description: Path to the student app repo
     default: app
+    description: Subdirectory where student app files live
 
 runs:
   using: composite
   steps:
-    - name: Checkout Infra Action
+    - name: Checkout Repo
       uses: actions/checkout@v4
-
-    - name: Checkout App Repo
-      uses: actions/checkout@v4
-      with:
-        path: ${{ inputs.app_dir }}
 
     - name: Add ENV files to context
       if: inputs.env_secrets != ''
       shell: bash
       run: |
-        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > ${{ inputs.app_dir }}/\(.value)"' | bash
+        cd ${{ inputs.app_dir }}
+        echo '${{ inputs.env_secrets }}' | jq -r 'to_entries[] | "echo \"$${" + .key + "}\" > \(.value)"' | bash
 
     - name: Install js-yaml
       shell: bash
-      run: npm install js-yaml
+      run: |
+        npm install js-yaml
 
     - name: Generate services.json from docker-compose
       shell: bash
       run: |
-        cp ${{ github.action_path }}/extract-services.mjs ${{ inputs.app_dir }}/
-        node ${{ inputs.app_dir }}/extract-services.mjs
+        node ${{ github.action_path }}/extract-services.mjs ${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json
 
     - name: Setup SSH
       shell: bash
@@ -62,14 +58,13 @@ runs:
       shell: bash
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
-    
+
         FILES="${{ inputs.app_dir }}/docker-compose.yml ${{ inputs.app_dir }}/services.json ./ansible"
         for file in ${{ inputs.app_dir }}/.env.*; do
           [ -e "$file" ] && FILES="$FILES $file"
         done
-    
-        scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
 
+        scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
 
     - name: Install and run Ansible
       shell: bash
