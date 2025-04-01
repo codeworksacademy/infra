@@ -1,8 +1,27 @@
 # 🐳 Student Deployment Starter Repo
 
-This repository contains a standardized structure for deploying student applications to a shared EC2 instance. It uses [Docker Compose](https://docs.docker.com/compose/), [Caddy](https://caddyserver.com/), [Ansible](https://docs.ansible.com/), and [GitHub Actions](https://docs.github.com/en/actions) to automate the deployment process.
+How to use
 
-To get started simply use this repo as a template `Green Button` 👀 and customize it for your applications. We recommend keeping this repository private 🔒. 
+```yml
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy with Infra
+        uses: codeworksacademy/infra@main
+        with:
+          host: ${{ secrets.HOST }}
+          ssh_key: ${{ secrets.SSH_KEY }}
+          ghcr_pat: ${{ secrets.GHCR_PAT }}
+          env_secrets: '{"ENV_APPNAME": ".env.appname"}'
+```
+
 
 ---
 
