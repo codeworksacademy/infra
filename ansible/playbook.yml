@@ -1,0 +1,128 @@
+- name: Provision and deploy with Docker Compose
+  hosts: localhost
+  connection: local
+  become: yes
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install supporting packages
+      apt:
+        name:
+          - caddy
+          - unzip
+          - git
+          - logrotate
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Ensure journald config directory exists
+      file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Limit journald logs
+      copy:
+        dest: /etc/systemd/journald.conf.d/limits.conf
+        content: |
+          [Journal]
+          SystemMaxUse=100M
+          SystemKeepFree=50M
+          SystemMaxFileSize=10M
+          SystemMaxFiles=5
+      notify: restart journald
+
+    - name: Disable swap (if present)
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Remove swap from fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^.*swap.*$'
+        replace: '# removed swap entry'
+
+    - name: Load services from JSON
+      set_fact:
+        services: "{{ lookup('file', '/opt/deploy/services.json') | from_json }}"
+
+  tasks:
+    - name: Deploy with Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/deploy
+        state: present
+        pull: always
+
+    - name: Clean existing static content
+      file:
+        path: "{{ item.value.labels.get('caddy.mount_path', '/srv/' + item.key) }}"
+        state: absent
+      loop: "{{ services | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.value.labels.get('caddy.type', '') == 'static'
+
+    - name: Create mount directories for static services
+      file:
+        path: "{{ item.value.labels.get('caddy.mount_path', '/srv/' + item.key) }}"
+        state: directory
+        owner: caddy
+        group: caddy
+        mode: '0755'
+      loop: "{{ services | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.value.labels.get('caddy.type', '') == 'static'
+
+    - name: Wait for static containers to be running
+      command: docker inspect -f '{{"{{"}}.State.Running{{"}}"}}' {{ item.key }}
+      register: container_status
+      retries: 10
+      delay: 3
+      until: container_status.stdout == "true"
+      loop: "{{ services | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.value.labels.get('caddy.type', '') == 'static'
+
+    - name: Copy static content from container to host
+      command: docker cp {{ item.key }}:/srv/. {{ item.value.labels.get('caddy.mount_path', '/srv/' + item.key) }}
+      loop: "{{ services | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      when: item.value.labels.get('caddy.type', '') == 'static'
+
+    - name: Render Caddyfile
+      template:
+        src: templates/Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+        mode: '0644'
+      notify: reload caddy
+
+    - name: Prune unused Docker images
+      command: docker image prune -af
+
+  handlers:
+    - name: reload caddy
+      service:
+        name: caddy
+        state: reloaded
+
+    - name: restart journald
+      service:
+        name: systemd-journald
+        state: restarted
