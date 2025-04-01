@@ -13,6 +13,7 @@ inputs:
   env_secrets:
     required: false
     description: JSON string of ENV files to write, e.g. '{"ENV_APPNAME": ".env.appname"}'
+    default: '{"ENV_APPNAME": ".env.appname"}'
 
 runs:
   using: composite
