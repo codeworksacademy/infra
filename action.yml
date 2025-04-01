@@ -48,8 +48,9 @@ runs:
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
         FILES="docker-compose.yml services.json"
-        for file in ${GITHUB_WORKSPACE}/.env.*; do
-          [ -e "$file" ] && FILES="$FILES $file"
+        for file in ${GITHUB_WORKSPACE}/app/.env.*; do
+          echo "📦 Adding $file to scp upload"
+          [ -f "$file" ] && FILES="$FILES $file"
         done
         FILES="$FILES ${{ github.action_path }}/ansible"
         scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
