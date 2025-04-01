@@ -53,7 +53,7 @@ runs:
         while IFS= read -r file; do
           echo "📦 Adding $file to scp upload"
           FILES="$FILES $file"
-        done < <(find "${GITHUB_WORKSPACE}/app" -maxdepth 1 -type f -name '.env.*')
+        done < <(find "${GITHUB_WORKSPACE}" -maxdepth 3 -type f -name '.env.*')
         
         FILES="$FILES ${{ github.action_path }}/ansible"
         echo "🗂️ Final FILES list: $FILES"
