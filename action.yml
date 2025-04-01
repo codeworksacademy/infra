@@ -48,7 +48,7 @@ runs:
       run: |
         ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
         FILES="docker-compose.yml services.json"
-        for file in .env.*; do
+        for file in app/.env.*; do
           [ -e "$file" ] && FILES="$FILES $file"
         done
         FILES="$FILES ${{ github.action_path }}/ansible"
