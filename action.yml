@@ -32,10 +32,6 @@ runs:
         chmod 600 ~/.ssh/id_rsa
         echo "StrictHostKeyChecking=no" >> ~/.ssh/config
 
-    - name: Docker Auth
-      shell: bash
-      run: echo "${{ inputs.ghcr_pat }}" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
-
     - name: Upload deploy files and envs
       shell: bash
       run: |
