@@ -81,7 +81,7 @@ runs:
           sudo systemctl enable docker
           sudo systemctl start docker
 
-          docker login ghcr.io -u ghcr-pull-bot --password "$GHCR_PAT"
+          echo "${{ inputs.ghcr_pat }}" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
           
           ansible-playbook ansible/playbook.yml -i localhost,
         EOF
