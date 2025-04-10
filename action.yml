@@ -80,8 +80,8 @@ runs:
 
           sudo systemctl enable docker
           sudo systemctl start docker
-          
-          echo "$GHCR_PAT" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
+
+          echo "${GHCR_PAT}" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
           
           ansible-playbook ansible/playbook.yml -i localhost,
         EOF
