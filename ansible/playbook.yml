@@ -111,16 +111,28 @@
         src: templates/Caddyfile.j2
         dest: /etc/caddy/Caddyfile
         mode: '0644'
-      notify: reload caddy
+
+    - name: Validate Caddyfile
+      command: caddy validate --config /etc/caddy/Caddyfile
+      register: caddy_validate
+      failed_when: caddy_validate.rc != 0
+
+    - name: Reload Caddy (only if validated)
+      service:
+        name: caddy
+        state: reloaded
+      notify: fallback restart caddy
+      ignore_errors: true
 
     - name: Prune unused Docker images
       command: docker image prune -af
 
   handlers:
-    - name: reload caddy
+    - name: fallback restart caddy
       service:
         name: caddy
-        state: reloaded
+        state: restarted
+      when: caddy_validate.rc == 0
 
     - name: restart journald
       service:
