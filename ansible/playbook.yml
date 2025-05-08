@@ -115,7 +115,7 @@
     - name: Validate Caddyfile
       command: caddy validate --config /etc/caddy/Caddyfile
       register: caddy_validate
-      failed_when: 'error' in caddy_validate.stderr
+      failed_when: '"error" in caddy_validate.stderr'
 
     - name: Reload Caddy (only if validated)
       service:
