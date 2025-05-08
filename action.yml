@@ -3,85 +3,18 @@ name: Provision and Deploy via CodeWorks Infra
 inputs:
   host:
     required: true
-    description: EC2 host IP or domain
   ssh_key:
     required: true
-    description: Private SSH key to connect to EC2
   ghcr_pat:
     required: true
-    description: GitHub token with read:packages for GHCR
 
 runs:
-  using: composite
+  using: "composite"
   steps:
-    - name: Install js-yaml
-      shell: bash
-      working-directory: ${{ github.action_path }}
-      run: npm install js-yaml
-
-    - name: Generate services.json from docker-compose
+    - name: Run provision and deploy script
       shell: bash
       run: |
-        node ${{ github.action_path }}/extract-services.mjs $GITHUB_WORKSPACE/docker-compose.yml $GITHUB_WORKSPACE/services.json
-
-    - name: Setup SSH
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ inputs.ssh_key }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        echo "StrictHostKeyChecking=no" >> ~/.ssh/config
-
-    - name: Upload deploy files and envs
-      shell: bash
-      run: |
-        ssh ubuntu@${{ inputs.host }} "sudo mkdir -p /opt/deploy && sudo chown ubuntu:ubuntu /opt/deploy"
-    
-        # Upload docker-compose and env files from the caller's workspace
-        FILES="docker-compose.yml services.json"
-    
-        echo "🔍 Searching for .env.* files in $GITHUB_WORKSPACE"
-        while IFS= read -r file; do
-          echo "📦 Adding $file to scp upload"
-          FILES="$FILES $file"
-        done < <(find "$GITHUB_WORKSPACE" -maxdepth 6 -type f -name '.env.*')
-    
-        echo "🗂️ Final FILES list from caller repo: $FILES"
-        scp -r $FILES ubuntu@${{ inputs.host }}:/opt/deploy/
-    
-        echo "📂 Uploading ansible folder from action repo"
-        scp -r ${{ github.action_path }}/ansible ubuntu@${{ inputs.host }}:/opt/deploy/
-
-
-    - name: Install and run Ansible
-      shell: bash
-      run: |
-        ssh ubuntu@${{ inputs.host }} <<'EOF'
-          set -e
-          export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
-          cd /opt/deploy
-
-          if ! command -v docker >/dev/null 2>&1; then
-            curl -fsSL https://get.docker.com -o get-docker.sh
-            sudo sh get-docker.sh
-            rm get-docker.sh
-          fi
-
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "❗ docker compose v2 not available"
-            exit 1
-          fi
-
-          if ! command -v ansible-playbook >/dev/null 2>&1; then
-            echo "📦 Installing Ansible..."
-            sudo apt update
-            sudo apt install -y ansible
-          fi
-
-          sudo systemctl enable docker
-          sudo systemctl start docker
-
-          echo "${{ inputs.ghcr_pat }}" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
-          
-          ansible-playbook ansible/playbook.yml -i localhost,
-        EOF
+        bash "${{ github.action_path }}/provision_and_deploy.sh" \
+          "${{ inputs.host }}" \
+          "${{ inputs.ssh_key }}" \
+          "${{ inputs.ghcr_pat }}"
