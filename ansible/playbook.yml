@@ -4,6 +4,22 @@
   become: yes
 
   pre_tasks:
+    - name: Load GHCR_PAT from /etc/environment
+      shell: |
+        source /etc/environment
+      args:
+        executable: /bin/bash
+
+    - name: Docker login to GHCR (as ubuntu)
+      shell: |
+        echo "$GHCR_PAT" | docker login ghcr.io -u ghcr-pull-bot --password-stdin
+      become: yes
+      become_user: ubuntu
+      environment:
+        GHCR_PAT: "{{ lookup('env', 'GHCR_PAT') }}"
+        HOME: "/home/ubuntu"
+      no_log: true
+
     - name: Update apt cache
       apt:
         update_cache: yes
