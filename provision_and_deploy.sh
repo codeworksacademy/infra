@@ -53,6 +53,11 @@ fi
 log "Uploading Ansible folder..."
 scp -F "$SSH_CONFIG" -i "$SSH_KEY_FILE" -r "$SCRIPT_DIR/$ANSIBLE_DIR" "$DEPLOY_USER@$HOST:$REMOTE_DIR/" || error_exit "Failed to upload Ansible folder"
 
+log "Persisting GHCR_PAT to /etc/environment..."
+ssh -F "$SSH_CONFIG" -i "$SSH_KEY_FILE" "$DEPLOY_USER@$HOST" <<EOF
+echo "GHCR_PAT=$GHCR_PAT" | sudo tee -a /etc/environment > /dev/null
+EOF
+
 log "Running remote provisioning via SSH..."
 ssh -F "$SSH_CONFIG" -i "$SSH_KEY_FILE" "$DEPLOY_USER@$HOST" <<EOF
 set -e
@@ -78,8 +83,6 @@ fi
 
 sudo systemctl enable docker
 sudo systemctl start docker
-
-echo "$GHCR_PAT" | docker login ghcr.io -u ghcr-pull-bot --password-stdin || exit 1
 
 echo "🏗️ Running Ansible playbook..."
 ansible-playbook $ANSIBLE_DIR/playbook.yml -i localhost, -v || exit 1
