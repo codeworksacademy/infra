@@ -82,6 +82,10 @@
         project_src: /opt/deploy
         state: present
         pull: always
+      become: yes
+      become_user: ubuntu
+      environment:
+        HOME: "/home/ubuntu"
 
     - name: Clean existing static content
       file:
